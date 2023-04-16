@@ -1,0 +1,22 @@
+---
+version: "2.1"
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - WEBUI_PORT=${qbt_port}
+      - DOCKER_MODS= #arafatamim/linuxserver-io-mod-vuetorrent
+    volumes:
+      - ${DIR_CONFIG}:/config
+      - ${DIR_DOWNLOADS}:/downloads
+      - ./script:/script:ro
+    network_mode: "host"
+    #     ports:
+    #       - 8888:8888
+    #       - 28888:28888
+    #       - 28888:28888/udp
+    restart: unless-stopped
