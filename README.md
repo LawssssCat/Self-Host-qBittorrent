@@ -1,23 +1,15 @@
-usage:
-```bash
-docker-compose --env-file .env.local up -d
-```
-
-docker:
+**docker:**
 ```
 https://hub.docker.com/r/linuxserver/qbittorrent
 ```
 
-tracker:
-```
-https://github.com/ngosang/trackerslist
-https://github.com/XIU2/TrackersListCollection
-https://newtrackon.com/list
-https://acgtracker.com/
-https://github.com/DeSireFire/animeTrackerList
+**usage:**
+```bash
+cp .env .env.local
+docker-compose --env-file .env.local up -d
 ```
 
-tracker script:
+**tracker script:**
 ```bash
 $ bash script/qbittorrent_webapi_tracker_cli.sh -h
 Usage: script/qbittorrent_webapi_tracker_cli.sh [OPTIONS...]
@@ -52,6 +44,25 @@ Example:
 
 tracker script in web ui: Options/Downloads/Run external program/Run external program on torrent added
 
+Update all subscribed trackers to the new torrent
+
 ```bash
 /script/qbittorrent_webapi_tracker_cli.sh -m add -H "%I"
+```
+
+Update all subscribed trackers to all torrent
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m add -H all
+```
+
+**environment in the .env file:**
+
+`qbt_tracker_list_subscription` -- tracker subscription
+```
+https://github.com/ngosang/trackerslist
+https://github.com/XIU2/TrackersListCollection
+https://newtrackon.com/list
+https://acgtracker.com/
+https://github.com/DeSireFire/animeTrackerList
 ```
