@@ -163,8 +163,10 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  Get trackers by subscription, But get cached data within the time range"
             echo "    -m get -t <second>"
             echo "  Get trackers by subscription, And add all trackers to the torrent with specified hash"
-            echo "    -m add -h <hash>"
-            echo "    -m add -h <hash1>,<hash2>"
+            echo "    -m add -H <hash>"
+            echo "    -m add -H <hash1>,<hash2>"
+            echo "  Get trackers by subscription, And add all trackers to all torrent"
+            echo "    -m add -H all"
             exit 0
             ;;
     esac
@@ -202,6 +204,9 @@ case "$mode" in
         if [ -z "$hash" ]; then
             echo "Need <hash> sepcify"
             exit 2
+        fi
+        if [[ "$hash" -eq "all" ]]; then
+            hash="$($0 -m list -p hash | tr " " ",")"
         fi
         hash_list=($(echo "$hash" | tr "," " "))
         for h in "${hash_list[@]}"; do 

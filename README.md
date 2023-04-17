@@ -26,7 +26,7 @@ Usage: script/qbittorrent_webapi_tracker_cli.sh [OPTIONS...]
   -a            Add mode
   -g            Generate mode
   -p <pattern>  Specify a property pattern of listing torrents
-  -H <hash>     Specify a hash of a torrent
+  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)
   -t <second>   Specify a time to cache
   -h            Display this help
 
@@ -44,7 +44,10 @@ Example:
   Get trackers by subscription, But get cached data within the time range
     -m get -t <second>
   Get trackers by subscription, And add all trackers to the torrent with specified hash
-    -m add -h <hash>
+    -m add -H <hash>
+    -m add -H <hash1>,<hash2>
+  Get trackers by subscription, And add all trackers to all torrent
+    -m add -H all
 ```
 
 tracker script in web ui: Options/Downloads/Run external program/Run external program on torrent added
