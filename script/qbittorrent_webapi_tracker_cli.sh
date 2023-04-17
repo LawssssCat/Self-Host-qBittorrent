@@ -19,6 +19,14 @@ else
         "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
     )
 fi
+# static trackers
+if [ -n "$(echo $qbt_tracker_list_static)" ]; then
+    # convert the string variable in .env to array
+    qbt_tracker_list_static=(${qbt_tracker_list_static[@]})
+else
+    qbt_tracker_list_static=()
+fi
+# file path to caching trackers
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
 ########## CONFIGURATIONS ##########
@@ -53,7 +61,7 @@ get_torrent_trackers () {
 
 get_subscription_trackers () {
     tmp_tracker_list=""
-    # cache
+    # subscription & cache trackers
     if [ ! -z "$1" ] && [ -f "$qbt_cache_tracker_list_subscription" ]; then
         limit_date=$(date -d "-$1 second" +%s)
         cache_date=$(head -n1 "$qbt_cache_tracker_list_subscription")
@@ -74,6 +82,11 @@ $(date +%s)
 ${tmp_tracker_list}
 EOF
     fi
+    # static trackers
+    for j in "${qbt_tracker_list_static[@]}"; do
+        tmp_tracker_list+=$j
+        tmp_tracker_list+=$'\n'
+    done
     # list | unique | rows
     tracker_list=$(echo "$tmp_tracker_list" | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}' | xargs | tr ' ' '\n')
 	tracker_list_num=$(echo "$tracker_list" | wc -l)
