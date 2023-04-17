@@ -145,7 +145,7 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  -a            Add mode"
             echo "  -g            Generate mode"
             echo "  -p <pattern>  Specify a property pattern of listing torrents"
-            echo "  -H <hash>     Specify a hash of a torrent"
+            echo "  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)"
             echo "  -t <second>   Specify a time to cache"
             echo "  -h            Display this help"
             echo ""
@@ -164,6 +164,7 @@ while getopts ":hm:p:H:t:" opt; do
             echo "    -m get -t <second>"
             echo "  Get trackers by subscription, And add all trackers to the torrent with specified hash"
             echo "    -m add -h <hash>"
+            echo "    -m add -h <hash1>,<hash2>"
             exit 0
             ;;
     esac
@@ -202,7 +203,10 @@ case "$mode" in
             echo "Need <hash> sepcify"
             exit 2
         fi
-        add_torrent_trackers "$hash" "$($0 -m get -t "${cache_time:-43200}")"
+        hash_list=($(echo "$hash" | tr "," " "))
+        for h in "${hash_list[@]}"; do 
+            add_torrent_trackers "$h" "$($0 -m get -t "${cache_time:-43200}")"
+        done
         exit 0
         ;;
     * )
