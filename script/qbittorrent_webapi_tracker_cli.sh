@@ -10,12 +10,15 @@ qbt_username="${qbt_username:-admin}"
 # Password to access to Web UI
 qbt_password="${qbt_password:-adminadmin}"
 
-qbt_tracker_list_subscription=(
-	"https://newtrackon.com/api/stable"
-    "https://cf.trackerslist.com/best.txt"
-    "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
-    "https://cdn.jsdelivr.net/gh/DeSireFire/animeTrackerList/AT_best.txt"
-)
+# Subscribed trackers
+if [ -n "$(echo $qbt_tracker_list_subscription)" ]; then
+    # convert the string variable in .env to array
+    qbt_tracker_list_subscription=(${qbt_tracker_list_subscription[@]})
+else
+    qbt_tracker_list_subscription=(
+        "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+    )
+fi
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
 ########## CONFIGURATIONS ##########
