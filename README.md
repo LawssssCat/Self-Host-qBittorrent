@@ -1,6 +1,6 @@
 usage:
 ```bash
-docker compose up --env-file .env.local -d 
+docker-compose --env-file .env.local up -d
 ```
 
 docker:
