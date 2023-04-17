@@ -1,23 +1,15 @@
-usage:
-```bash
-docker compose up --env-file .env.local -d 
-```
-
-docker:
+**docker:**
 ```
 https://hub.docker.com/r/linuxserver/qbittorrent
 ```
 
-tracker:
-```
-https://github.com/ngosang/trackerslist
-https://github.com/XIU2/TrackersListCollection
-https://newtrackon.com/list
-https://acgtracker.com/
-https://github.com/DeSireFire/animeTrackerList
+**usage:**
+```bash
+cp .env .env.local
+docker-compose --env-file .env.local up -d
 ```
 
-tracker script:
+**tracker script:**
 ```bash
 $ bash script/qbittorrent_webapi_tracker_cli.sh -h
 Usage: script/qbittorrent_webapi_tracker_cli.sh [OPTIONS...]
@@ -26,7 +18,7 @@ Usage: script/qbittorrent_webapi_tracker_cli.sh [OPTIONS...]
   -a            Add mode
   -g            Generate mode
   -p <pattern>  Specify a property pattern of listing torrents
-  -H <hash>     Specify a hash of a torrent
+  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)
   -t <second>   Specify a time to cache
   -h            Display this help
 
@@ -44,11 +36,33 @@ Example:
   Get trackers by subscription, But get cached data within the time range
     -m get -t <second>
   Get trackers by subscription, And add all trackers to the torrent with specified hash
-    -m add -h <hash>
+    -m add -H <hash>
+    -m add -H <hash1>,<hash2>
+  Get trackers by subscription, And add all trackers to all torrent
+    -m add -H all
 ```
 
 tracker script in web ui: Options/Downloads/Run external program/Run external program on torrent added
 
+Update all subscribed trackers to the new torrent
+
 ```bash
 /script/qbittorrent_webapi_tracker_cli.sh -m add -H "%I"
+```
+
+Update all subscribed trackers to all torrent
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m add -H all
+```
+
+**environment in the .env file:**
+
+`qbt_tracker_list_subscription` -- tracker subscription
+```
+https://github.com/ngosang/trackerslist
+https://github.com/XIU2/TrackersListCollection
+https://newtrackon.com/list
+https://acgtracker.com/
+https://github.com/DeSireFire/animeTrackerList
 ```

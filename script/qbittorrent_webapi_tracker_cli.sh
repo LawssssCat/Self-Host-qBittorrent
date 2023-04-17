@@ -10,12 +10,23 @@ qbt_username="${qbt_username:-admin}"
 # Password to access to Web UI
 qbt_password="${qbt_password:-adminadmin}"
 
-qbt_tracker_list_subscription=(
-	"https://newtrackon.com/api/stable"
-    "https://cf.trackerslist.com/best.txt"
-    "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
-    "https://cdn.jsdelivr.net/gh/DeSireFire/animeTrackerList/AT_best.txt"
-)
+# Subscribed trackers
+if [ -n "$(echo $qbt_tracker_list_subscription)" ]; then
+    # convert the string variable in .env to array
+    qbt_tracker_list_subscription=(${qbt_tracker_list_subscription[@]})
+else
+    qbt_tracker_list_subscription=(
+        "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+    )
+fi
+# static trackers
+if [ -n "$(echo $qbt_tracker_list_static)" ]; then
+    # convert the string variable in .env to array
+    qbt_tracker_list_static=(${qbt_tracker_list_static[@]})
+else
+    qbt_tracker_list_static=()
+fi
+# file path to caching trackers
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
 ########## CONFIGURATIONS ##########
@@ -50,7 +61,7 @@ get_torrent_trackers () {
 
 get_subscription_trackers () {
     tmp_tracker_list=""
-    # cache
+    # subscription & cache trackers
     if [ ! -z "$1" ] && [ -f "$qbt_cache_tracker_list_subscription" ]; then
         limit_date=$(date -d "-$1 second" +%s)
         cache_date=$(head -n1 "$qbt_cache_tracker_list_subscription")
@@ -71,6 +82,11 @@ $(date +%s)
 ${tmp_tracker_list}
 EOF
     fi
+    # static trackers
+    for j in "${qbt_tracker_list_static[@]}"; do
+        tmp_tracker_list+=$j
+        tmp_tracker_list+=$'\n'
+    done
     # list | unique | rows
     tracker_list=$(echo "$tmp_tracker_list" | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}' | xargs | tr ' ' '\n')
 	tracker_list_num=$(echo "$tracker_list" | wc -l)
@@ -129,7 +145,7 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  -a            Add mode"
             echo "  -g            Generate mode"
             echo "  -p <pattern>  Specify a property pattern of listing torrents"
-            echo "  -H <hash>     Specify a hash of a torrent"
+            echo "  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)"
             echo "  -t <second>   Specify a time to cache"
             echo "  -h            Display this help"
             echo ""
@@ -147,7 +163,10 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  Get trackers by subscription, But get cached data within the time range"
             echo "    -m get -t <second>"
             echo "  Get trackers by subscription, And add all trackers to the torrent with specified hash"
-            echo "    -m add -h <hash>"
+            echo "    -m add -H <hash>"
+            echo "    -m add -H <hash1>,<hash2>"
+            echo "  Get trackers by subscription, And add all trackers to all torrent"
+            echo "    -m add -H all"
             exit 0
             ;;
     esac
@@ -186,7 +205,13 @@ case "$mode" in
             echo "Need <hash> sepcify"
             exit 2
         fi
-        add_torrent_trackers "$hash" "$($0 -m get -t "${cache_time:-43200}")"
+        if [[ "$hash" -eq "all" ]]; then
+            hash="$($0 -m list -p hash | tr " " ",")"
+        fi
+        hash_list=($(echo "$hash" | tr "," " "))
+        for h in "${hash_list[@]}"; do 
+            add_torrent_trackers "$h" "$($0 -m get -t "${cache_time:-43200}")"
+        done
         exit 0
         ;;
     * )

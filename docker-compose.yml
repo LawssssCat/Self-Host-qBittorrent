@@ -14,6 +14,8 @@ services:
       - qbt_port=${qbt_port:-8081}
       - qbt_username=${qbt_username:-admin}
       - qbt_password=${qbt_password:-adminadmin}
+      - qbt_tracker_list_subscription=${qbt_tracker_list_subscription}
+      - qbt_tracker_list_static=${qbt_tracker_list_static}
     volumes:
       - ${DIR_CONFIG:-./data/config}:/config
       - ${DIR_DOWNLOADS:-./data/downloads}:/downloads
