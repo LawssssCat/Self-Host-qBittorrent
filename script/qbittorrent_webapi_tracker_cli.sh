@@ -14,6 +14,7 @@ qbt_tracker_list_subscription=(
 	"https://newtrackon.com/api/stable"
     "https://cf.trackerslist.com/best.txt"
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+    "https://cdn.jsdelivr.net/gh/DeSireFire/animeTrackerList/AT_best.txt"
 )
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
@@ -83,7 +84,7 @@ add_torrent_trackers () {
         -d "hash=${1}&urls=${tracker_list}" \
         --cookie - \
         --request POST "${qbt_host}:${qbt_port}/api/v2/torrents/addTrackers"
-    echo -e "$?,$tracker_list_num"
+    echo -e "$?,$tracker_list_num,$1"
 }
 
 ########## FUNCTIONS ##########

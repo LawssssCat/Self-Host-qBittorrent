@@ -46,3 +46,9 @@ Example:
   Get trackers by subscription, And add all trackers to the torrent with specified hash
     -m add -h <hash>
 ```
+
+tracker script in web ui: Options/Downloads/Run external program/Run external program on torrent added
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m add -H "%I"
+```
