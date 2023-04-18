@@ -45,6 +45,13 @@ get_cookie () {
     fi
 }
 
+get_app_preference () {
+    get_cookie
+	preference=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+		--cookie - \
+		--request GET "${qbt_host}:${qbt_port}/api/v2/app/preferences")
+}
+
 get_torrent_list () {
 	get_cookie
 	torrent_list=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
@@ -181,6 +188,8 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "    -m list -p tracker -h <hash>"
             echo "  List all peers of the torrent with specified hash"
             echo "    -m list -p peer -h <hash>"
+            echo "  List all banned peers"
+            echo "    -m list -p banpeer"
             echo "  Get trackers by subscription"
             echo "    -m get"
             echo "  Get trackers by subscription, But get cached data within the time range"
@@ -220,6 +229,10 @@ case "$mode" in
                 fi
                 get_torrent_peers "$hash"
                 echo "$tracker_list" | $jq_executable --raw-output '.peers'
+                ;;
+            banpeer )
+                get_app_preference
+                echo "$preference" | $jq_executable --raw-output '.banned_IPs'
                 ;;
             * )
                 get_torrent_list
