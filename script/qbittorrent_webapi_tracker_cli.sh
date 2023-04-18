@@ -103,6 +103,22 @@ add_torrent_trackers () {
     echo -e "$?,$tracker_list_num,$1"
 }
 
+get_torrent_peers () {
+    get_cookie
+	tracker_list=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+		--cookie - \
+		--request GET "${qbt_host}:${qbt_port}/api/v2/sync/torrentPeers?hash=${1}")
+}
+
+ban_torrent_peers () {
+    get_cookie
+    scenarios=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+        -d "peers=${1}" \
+		--cookie - \
+		--request POST "${qbt_host}:${qbt_port}/api/v2/transfer/banPeers")
+    echo "$?,$(echo "$1" | tr "\|" "\n" | wc -l)"
+}
+
 ########## FUNCTIONS ##########
 
 if [[ ! $@ =~ ^\-.+ ]]; then
@@ -113,10 +129,11 @@ fi
 
 mode=""
 hash=""
+peer=""
 cache_time=""
 list_pattern=""
 
-while getopts ":hm:p:H:t:" opt; do
+while getopts ":hm:p:H:t:P:" opt; do
     case "$opt" in
         m )
             mode="$OPTARG"
@@ -129,7 +146,10 @@ while getopts ":hm:p:H:t:" opt; do
             ;;
         t )
             cache_time="$OPTARG"
-            ;;        
+            ;;
+        P )
+            peer="$OPTARG"
+            ;;
         : )
             echo "Invalid option: -${OPTARG} requires an argument" 1>&2
             exit 2
@@ -146,6 +166,7 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  -g            Generate mode"
             echo "  -p <pattern>  Specify a property pattern of listing torrents"
             echo "  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)"
+            echo "  -P <peer>     Specify a peer with a colon-separated "host:port" (Use '|' to split mutiple peers)"
             echo "  -t <second>   Specify a time to cache"
             echo "  -h            Display this help"
             echo ""
@@ -158,6 +179,8 @@ while getopts ":hm:p:H:t:" opt; do
             echo "    -m list -p hash"
             echo "  List all trackers of the torrent with specified hash"
             echo "    -m list -p tracker -h <hash>"
+            echo "  List all peers of the torrent with specified hash"
+            echo "    -m list -p peer -h <hash>"
             echo "  Get trackers by subscription"
             echo "    -m get"
             echo "  Get trackers by subscription, But get cached data within the time range"
@@ -167,6 +190,8 @@ while getopts ":hm:p:H:t:" opt; do
             echo "    -m add -H <hash1>,<hash2>"
             echo "  Get trackers by subscription, And add all trackers to all torrent"
             echo "    -m add -H all"
+            echo "  Ban peers"
+            echo "    -m ban -P <peer1>|<peer2>"
             exit 0
             ;;
     esac
@@ -182,11 +207,19 @@ case "$mode" in
                 ;;
             tracker )
                 if [ -z "$hash" ]; then
-                    echo "Need <hash> sepcify"
+                    echo "Need: -H <hash>"
                     exit 2
                 fi
                 get_torrent_trackers "$hash"
                 echo "$tracker_list" | $jq_executable --raw-output ''
+                ;;
+            peer )
+                if [ -z "$hash" ]; then
+                    echo "Need: -H <hash>"
+                    exit 2
+                fi
+                get_torrent_peers "$hash"
+                echo "$tracker_list" | $jq_executable --raw-output '.peers'
                 ;;
             * )
                 get_torrent_list
@@ -202,7 +235,7 @@ case "$mode" in
         ;;
     add )
         if [ -z "$hash" ]; then
-            echo "Need <hash> sepcify"
+            echo "Need: -H <hash>"
             exit 2
         fi
         if [[ "$hash" -eq "all" ]]; then
@@ -212,6 +245,15 @@ case "$mode" in
         for h in "${hash_list[@]}"; do 
             add_torrent_trackers "$h" "$($0 -m get -t "${cache_time:-43200}")"
         done
+        exit 0
+        ;;
+    ban )
+        # -m list -p peer -H 576d09840f0dc80fb91010dd969b90bf0cf0f8b7
+        if [ -z "$peer" ]; then
+            echo "Need: -P <peer>"
+            exit 2
+        fi
+        ban_torrent_peers "$peer"
         exit 0
         ;;
     * )
