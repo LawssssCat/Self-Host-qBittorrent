@@ -11,21 +11,11 @@ qbt_username="${qbt_username:-admin}"
 qbt_password="${qbt_password:-adminadmin}"
 
 # Subscribed trackers
-if [ -n "$(echo $qbt_tracker_list_subscription)" ]; then
-    # convert the string variable in .env to array
-    qbt_tracker_list_subscription=(${qbt_tracker_list_subscription[@]})
-else
-    qbt_tracker_list_subscription=(
-        "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
-    )
-fi
+qbt_tracker_list_subscription="${qbt_tracker_list_subscription:-"
+https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt
+"}"
 # static trackers
-if [ -n "$(echo $qbt_tracker_list_static)" ]; then
-    # convert the string variable in .env to array
-    qbt_tracker_list_static=(${qbt_tracker_list_static[@]})
-else
-    qbt_tracker_list_static=()
-fi
+qbt_tracker_list_static="${qbt_tracker_list_static:-""}"
 # file path to caching trackers
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
@@ -36,6 +26,19 @@ qbt_peer_ban_pattern="${qbt_peer_ban_pattern:-Xunlei|\"key\"\:\"[^\"]*\:15000\".
 
 jq_executable="$(command -v jq)"
 curl_executable="$(command -v curl)"
+
+if [[ -z $jq_executable ]]; then
+	echo -e "\n\e[0;91;1mFail on jq. Aborting.\n\e[0m"
+	echo "You can find it here: https://stedolan.github.io/jq/"
+	echo "Or you can install it with -> sudo apt install jq"
+	exit 1
+fi
+
+if [[ -z $curl_executable ]]; then
+	echo -e "\n\e[0;91;1mFail on curl. Aborting.\n\e[0m"
+	echo "You can install it with -> sudo apt install curl"
+	exit 1
+fi
 
 ########## FUNCTIONS ##########
 
@@ -81,7 +84,7 @@ get_subscription_trackers () {
         fi
     fi
     if [ -z "$tmp_tracker_list" ]; then
-        for j in "${qbt_tracker_list_subscription[@]}"; do
+        for j in $qbt_tracker_list_subscription; do
             tmp_tracker_list+=$($curl_executable -sS $j)
             tmp_tracker_list+=$'\n'
         done
@@ -93,7 +96,7 @@ ${tmp_tracker_list}
 EOF
     fi
     # static trackers
-    for j in "${qbt_tracker_list_static[@]}"; do
+    for j in $qbt_tracker_list_static; do
         tmp_tracker_list+=$j
         tmp_tracker_list+=$'\n'
     done
@@ -273,8 +276,8 @@ case "$mode" in
         if [[ "$hash" == "all" ]]; then
             hash="$($0 -m list -p hash | tr " " ",")"
         fi
-        hash_list=($(echo "$hash" | tr "," " "))
-        for h in "${hash_list[@]}"; do 
+        hash_list="$(echo "$hash" | tr "," " ")"
+        for h in $hash_list; do 
             add_torrent_trackers "$h" "$($0 -m get -t "${cache_time:-43200}")"
         done
         exit 0

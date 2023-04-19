@@ -115,4 +115,5 @@ https://github.com/DeSireFire/animeTrackerList
 
 **alternate**
 
-+ https://github.com/fedarovich/qbittorrent-cli
++ https://github.com/fedarovich/qbittorrent-cli —— qbt cli 
++ https://github.com/Jorman/Scripts/blob/master/AddqBittorrentTrackers.sh —— tracker subscription
