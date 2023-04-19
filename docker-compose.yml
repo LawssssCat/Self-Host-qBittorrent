@@ -9,7 +9,8 @@ services:
       - PGID=${PGID:-1000}
       - TZ=${TZ:-Asia/Shanghai}
       - WEBUI_PORT=${qbt_port:-8081}
-      - DOCKER_MODS= #arafatamim/linuxserver-io-mod-vuetorrent
+      - DOCKER_MODS=linuxserver/mods:universal-cron #|linuxserver/mods:universal-stdout-logs|arafatamim/linuxserver-io-mod-vuetorrent
+      # - LOGS_TO_STDOUT="/config/qBittorrent/logs/qbittorrent.log"
       - qbt_host=${qbt_host:-http://127.0.0.1}
       - qbt_port=${qbt_port:-8081}
       - qbt_username=${qbt_username:-admin}
@@ -21,6 +22,7 @@ services:
       - ${DIR_CONFIG:-./data/config}:/config
       - ${DIR_DOWNLOADS:-./data/downloads}:/downloads
       - ./script:/script:ro
+      - ./script/config/crontabs/abc:/config/crontabs/abc
     network_mode: "host" # for listening port access from internat
     #     ports:
     #       - 8888:8888

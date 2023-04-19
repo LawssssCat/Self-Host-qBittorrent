@@ -270,7 +270,7 @@ case "$mode" in
             echo "Need: -H <hash>"
             exit 2
         fi
-        if [[ "$hash" -eq "all" ]]; then
+        if [[ "$hash" == "all" ]]; then
             hash="$($0 -m list -p hash | tr " " ",")"
         fi
         hash_list=($(echo "$hash" | tr "," " "))
@@ -280,12 +280,12 @@ case "$mode" in
         exit 0
         ;;
     ban )
-        if [ -z "$peer" ]; then
-            echo "Need: -P <peer>"
-            exit 2
-        fi
         if [[ "$peer" == "anti_leech" ]]; then
             peer=$($0 -m list -p peer -H anti_leech | awk 'match($0,/"key"\:"[^"]*"/) { print substr($0,RSTART+7,RLENGTH-8)}' | sed ":a;$!N;s/\n/|/;ta")
+        fi
+        if [ -z "$peer" ]; then
+            echo "No peer was specified. You can specify the peer through \"-P <peer>\"."
+            exit 2
         fi
         ban_torrent_peers "$peer"
         exit 0
