@@ -11,8 +11,8 @@ docker-compose --env-file .env.local up -d
 
 **tracker script:**
 ```bash
-$ bash script/qbittorrent_webapi_tracker_cli.sh -h
-Usage: script/qbittorrent_webapi_tracker_cli.sh [OPTIONS...]
+$ bash script/qbittorrent_webapi_cli.sh -h
+Usage: script/qbittorrent_webapi_cli.sh [OPTIONS...]
 
   -l            List mode
   -a            Add mode
@@ -47,37 +47,37 @@ tracker script in web ui: Options/Downloads/Run external program/Run external pr
 Update all subscribed trackers to the new torrent
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m add -H "%I"
+/script/qbittorrent_webapi_cli.sh -m add -H "%I"
 ```
 
 Update all subscribed trackers to all torrent
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m add -H all
+/script/qbittorrent_webapi_cli.sh -m add -H all
 ```
 
 Show all active leech peers
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m list -p peer -H anti_leech
+/script/qbittorrent_webapi_cli.sh -m list -p peer -H anti_leech
 ```
 
 Ban all leech peers and show the number of banned peers
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m ban -P anti_leech
+/script/qbittorrent_webapi_cli.sh -m ban -P anti_leech
 ```
 
 Show all banned leech peers
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m list -p banpeer
+/script/qbittorrent_webapi_cli.sh -m list -p banpeer
 ```
 
 Combo
 
 ```bash
-/script/qbittorrent_webapi_tracker_cli.sh -m ban -P anti_leech && /script/qbittorrent_webapi_tracker_cli.sh -m list -p banpeer | wc -l
+/script/qbittorrent_webapi_cli.sh -m ban -P anti_leech && /script/qbittorrent_webapi_cli.sh -m list -p banpeer | wc -l
 ```
 
 **environment in the .env file:**
