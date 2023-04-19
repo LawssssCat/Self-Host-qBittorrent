@@ -29,6 +29,9 @@ fi
 # file path to caching trackers
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
+# peer ban pattern that used by 'grep -E'
+qbt_peer_ban_pattern="${qbt_peer_ban_pattern:-Xunlei|\"key\"\:\"[^\"]*\:15000\".*\"country_code\"\:\"cn\"|QQDownload|TorrentStorm}"
+
 ########## CONFIGURATIONS ##########
 
 jq_executable="$(command -v jq)"
@@ -123,7 +126,7 @@ ban_torrent_peers () {
         -d "peers=${1}" \
 		--cookie - \
 		--request POST "${qbt_host}:${qbt_port}/api/v2/transfer/banPeers")
-    echo "$?,$(echo "$1" | tr "\|" "\n" | wc -l)"
+    echo "$?,$(echo "$1" | tr "\|" "\n" | wc -l),$1"
 }
 
 ########## FUNCTIONS ##########
@@ -190,6 +193,8 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "    -m list -p peer -H <hash>"
             echo "  List all peers of All torrent"
             echo "    -m list -p peer -H all"
+            echo "  List all leech peers of All torrent"
+            echo "    -m list -p peer -H anti_leech"
             echo "  List all banned peers"
             echo "    -m list -p banpeer"
             echo "  Get trackers by subscription"
@@ -203,6 +208,8 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "    -m add -H all"
             echo "  Ban peers"
             echo "    -m ban -P <peer1>|<peer2>"
+            echo "  Ban all leech peers"
+            echo "    -m ban -P anti_leech"
             exit 0
             ;;
     esac
@@ -232,10 +239,14 @@ case "$mode" in
                 if [[ "$hash" == "all" ]]; then
                     hash="$($0 -m list -p hash | tr " " ",")"
                 fi
+                if [[ "$hash" == "anti_leech" ]]; then
+                    $0 -m list -p peer -H all | grep -E "$qbt_peer_ban_pattern"
+                    exit 0
+                fi
                 hash_list="$(echo "$hash" | tr "," " ")"
                 for h in $hash_list; do
                     get_torrent_peers "$h"
-                    echo "$peer_list" | jq -c  '.peers | to_entries[]'
+                    echo "$peer_list" | $jq_executable -c '.peers | to_entries[]'
                 done
                 ;;
             banpeer )
@@ -272,6 +283,9 @@ case "$mode" in
         if [ -z "$peer" ]; then
             echo "Need: -P <peer>"
             exit 2
+        fi
+        if [[ "$peer" == "anti_leech" ]]; then
+            peer=$($0 -m list -p peer -H anti_leech | awk 'match($0,/"key"\:"[^"]*"/) { print substr($0,RSTART+7,RLENGTH-8)}' | sed ":a;$!N;s/\n/|/;ta")
         fi
         ban_torrent_peers "$peer"
         exit 0

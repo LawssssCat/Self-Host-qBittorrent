@@ -56,6 +56,30 @@ Update all subscribed trackers to all torrent
 /script/qbittorrent_webapi_tracker_cli.sh -m add -H all
 ```
 
+Show all active leech peers
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m list -p peer -H anti_leech
+```
+
+Ban all leech peers and show the number of banned peers
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m ban -P anti_leech
+```
+
+Show all banned leech peers
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m list -p banpeer
+```
+
+Combo
+
+```bash
+/script/qbittorrent_webapi_tracker_cli.sh -m ban -P anti_leech && /script/qbittorrent_webapi_tracker_cli.sh -m list -p banpeer | wc -l
+```
+
 **environment in the .env file:**
 
 `qbt_tracker_list_subscription` -- tracker subscription

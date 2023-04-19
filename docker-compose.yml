@@ -16,11 +16,12 @@ services:
       - qbt_password=${qbt_password:-adminadmin}
       - qbt_tracker_list_subscription=${qbt_tracker_list_subscription}
       - qbt_tracker_list_static=${qbt_tracker_list_static}
+      - qbt_peer_ban_pattern=${qbt_peer_ban_pattern}
     volumes:
       - ${DIR_CONFIG:-./data/config}:/config
       - ${DIR_DOWNLOADS:-./data/downloads}:/downloads
       - ./script:/script:ro
-    network_mode: "host"
+    network_mode: "host" # for listening port access from internat
     #     ports:
     #       - 8888:8888
     #       - 28888:28888
