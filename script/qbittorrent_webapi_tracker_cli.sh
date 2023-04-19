@@ -112,7 +112,7 @@ add_torrent_trackers () {
 
 get_torrent_peers () {
     get_cookie
-	tracker_list=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+    peer_list=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
 		--cookie - \
 		--request GET "${qbt_host}:${qbt_port}/api/v2/sync/torrentPeers?hash=${1}")
 }
@@ -185,9 +185,11 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "  List all torrent hash"
             echo "    -m list -p hash"
             echo "  List all trackers of the torrent with specified hash"
-            echo "    -m list -p tracker -h <hash>"
+            echo "    -m list -p tracker -H <hash>"
             echo "  List all peers of the torrent with specified hash"
-            echo "    -m list -p peer -h <hash>"
+            echo "    -m list -p peer -H <hash>"
+            echo "  List all peers of All torrent"
+            echo "    -m list -p peer -H all"
             echo "  List all banned peers"
             echo "    -m list -p banpeer"
             echo "  Get trackers by subscription"
@@ -227,8 +229,14 @@ case "$mode" in
                     echo "Need: -H <hash>"
                     exit 2
                 fi
-                get_torrent_peers "$hash"
-                echo "$tracker_list" | $jq_executable --raw-output '.peers'
+                if [[ "$hash" == "all" ]]; then
+                    hash="$($0 -m list -p hash | tr " " ",")"
+                fi
+                hash_list="$(echo "$hash" | tr "," " ")"
+                for h in $hash_list; do
+                    get_torrent_peers "$h"
+                    echo "$peer_list" | jq -c  '.peers | to_entries[]'
+                done
                 ;;
             banpeer )
                 get_app_preference
@@ -261,7 +269,6 @@ case "$mode" in
         exit 0
         ;;
     ban )
-        # -m list -p peer -H 576d09840f0dc80fb91010dd969b90bf0cf0f8b7
         if [ -z "$peer" ]; then
             echo "Need: -P <peer>"
             exit 2
