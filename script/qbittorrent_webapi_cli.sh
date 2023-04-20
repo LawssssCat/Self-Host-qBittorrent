@@ -11,28 +11,34 @@ qbt_username="${qbt_username:-admin}"
 qbt_password="${qbt_password:-adminadmin}"
 
 # Subscribed trackers
-if [ -n "$(echo $qbt_tracker_list_subscription)" ]; then
-    # convert the string variable in .env to array
-    qbt_tracker_list_subscription=(${qbt_tracker_list_subscription[@]})
-else
-    qbt_tracker_list_subscription=(
-        "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
-    )
-fi
+qbt_tracker_list_subscription="${qbt_tracker_list_subscription:-"
+https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt
+"}"
 # static trackers
-if [ -n "$(echo $qbt_tracker_list_static)" ]; then
-    # convert the string variable in .env to array
-    qbt_tracker_list_static=(${qbt_tracker_list_static[@]})
-else
-    qbt_tracker_list_static=()
-fi
+qbt_tracker_list_static="${qbt_tracker_list_static:-""}"
 # file path to caching trackers
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
+
+# peer ban pattern that used by 'grep -E'
+qbt_anti_leech_peer_ban_pattern="${qbt_anti_leech_peer_ban_pattern:-Xunlei|\-XL}"
 
 ########## CONFIGURATIONS ##########
 
 jq_executable="$(command -v jq)"
 curl_executable="$(command -v curl)"
+
+if [[ -z $jq_executable ]]; then
+	echo -e "\n\e[0;91;1mFail on jq. Aborting.\n\e[0m"
+	echo "You can find it here: https://stedolan.github.io/jq/"
+	echo "Or you can install it with -> sudo apt install jq"
+	exit 1
+fi
+
+if [[ -z $curl_executable ]]; then
+	echo -e "\n\e[0;91;1mFail on curl. Aborting.\n\e[0m"
+	echo "You can install it with -> sudo apt install curl"
+	exit 1
+fi
 
 ########## FUNCTIONS ##########
 
@@ -43,6 +49,13 @@ get_cookie () {
             --cookie-jar - \
             --data "username=${qbt_username}&password=${qbt_password}" ${qbt_host}:${qbt_port}/api/v2/auth/login)
     fi
+}
+
+get_app_preference () {
+    get_cookie
+	preference=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+		--cookie - \
+		--request GET "${qbt_host}:${qbt_port}/api/v2/app/preferences")
 }
 
 get_torrent_list () {
@@ -71,7 +84,7 @@ get_subscription_trackers () {
         fi
     fi
     if [ -z "$tmp_tracker_list" ]; then
-        for j in "${qbt_tracker_list_subscription[@]}"; do
+        for j in $qbt_tracker_list_subscription; do
             tmp_tracker_list+=$($curl_executable -sS $j)
             tmp_tracker_list+=$'\n'
         done
@@ -83,7 +96,7 @@ ${tmp_tracker_list}
 EOF
     fi
     # static trackers
-    for j in "${qbt_tracker_list_static[@]}"; do
+    for j in $qbt_tracker_list_static; do
         tmp_tracker_list+=$j
         tmp_tracker_list+=$'\n'
     done
@@ -103,6 +116,22 @@ add_torrent_trackers () {
     echo -e "$?,$tracker_list_num,$1"
 }
 
+get_torrent_peers () {
+    get_cookie
+    peer_list=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+		--cookie - \
+		--request GET "${qbt_host}:${qbt_port}/api/v2/sync/torrentPeers?hash=${1}")
+}
+
+ban_torrent_peers () {
+    get_cookie
+    scenarios=$(echo "$qbt_cookie" | $curl_executable --silent --fail --show-error \
+        -d "peers=${1}" \
+		--cookie - \
+		--request POST "${qbt_host}:${qbt_port}/api/v2/transfer/banPeers")
+    echo "$?,$(echo "$1" | tr "\|" "\n" | wc -l),$1"
+}
+
 ########## FUNCTIONS ##########
 
 if [[ ! $@ =~ ^\-.+ ]]; then
@@ -113,10 +142,11 @@ fi
 
 mode=""
 hash=""
+peer=""
 cache_time=""
 list_pattern=""
 
-while getopts ":hm:p:H:t:" opt; do
+while getopts ":hm:p:H:t:P:" opt; do
     case "$opt" in
         m )
             mode="$OPTARG"
@@ -129,7 +159,10 @@ while getopts ":hm:p:H:t:" opt; do
             ;;
         t )
             cache_time="$OPTARG"
-            ;;        
+            ;;
+        P )
+            peer="$OPTARG"
+            ;;
         : )
             echo "Invalid option: -${OPTARG} requires an argument" 1>&2
             exit 2
@@ -146,6 +179,7 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  -g            Generate mode"
             echo "  -p <pattern>  Specify a property pattern of listing torrents"
             echo "  -H <hash>     Specify a hash of a torrent (Use ',' to split mutiple hash)"
+            echo "  -P <peer>     Specify a peer with a colon-separated "host:port" (Use '|' to split mutiple peers)"
             echo "  -t <second>   Specify a time to cache"
             echo "  -h            Display this help"
             echo ""
@@ -157,7 +191,15 @@ while getopts ":hm:p:H:t:" opt; do
             echo "  List all torrent hash"
             echo "    -m list -p hash"
             echo "  List all trackers of the torrent with specified hash"
-            echo "    -m list -p tracker -h <hash>"
+            echo "    -m list -p tracker -H <hash>"
+            echo "  List all peers of the torrent with specified hash"
+            echo "    -m list -p peer -H <hash>"
+            echo "  List all peers of All torrent"
+            echo "    -m list -p peer -H all"
+            echo "  List all active leech peers of All torrent"
+            echo "    -m list -p peer -H anti_leech"
+            echo "  List all banned peers"
+            echo "    -m list -p banpeer"
             echo "  Get trackers by subscription"
             echo "    -m get"
             echo "  Get trackers by subscription, But get cached data within the time range"
@@ -167,6 +209,10 @@ while getopts ":hm:p:H:t:" opt; do
             echo "    -m add -H <hash1>,<hash2>"
             echo "  Get trackers by subscription, And add all trackers to all torrent"
             echo "    -m add -H all"
+            echo "  Ban peers"
+            echo "    -m ban -P <peer1>|<peer2>"
+            echo "  Ban all active leech peers"
+            echo "    -m ban -P anti_leech"
             exit 0
             ;;
     esac
@@ -182,11 +228,37 @@ case "$mode" in
                 ;;
             tracker )
                 if [ -z "$hash" ]; then
-                    echo "Need <hash> sepcify"
+                    echo "Need: -H <hash>"
                     exit 2
                 fi
                 get_torrent_trackers "$hash"
                 echo "$tracker_list" | $jq_executable --raw-output ''
+                ;;
+            peer )
+                if [ -z "$hash" ]; then
+                    echo "Need: -H <hash>"
+                    exit 2
+                fi
+                if [[ "$hash" == "all" ]]; then
+                    hash="$($0 -m list -p hash | tr " " ",")"
+                fi
+                if [[ "$hash" == "anti_leech" ]]; then
+                    if [ -z "$qbt_anti_leech_peer_ban_pattern" ]; then
+                        echo "Unfound env \"qbt_anti_leech_peer_ban_pattern\""
+                        exit 2
+                    fi
+                    $0 -m list -p peer -H all | grep -E "$qbt_anti_leech_peer_ban_pattern"
+                    exit 0
+                fi
+                hash_list="$(echo "$hash" | tr "," " ")"
+                for h in $hash_list; do
+                    get_torrent_peers "$h"
+                    echo "$peer_list" | $jq_executable -c '.peers | to_entries[]'
+                done
+                ;;
+            banpeer )
+                get_app_preference
+                echo "$preference" | $jq_executable --raw-output '.banned_IPs'
                 ;;
             * )
                 get_torrent_list
@@ -202,16 +274,27 @@ case "$mode" in
         ;;
     add )
         if [ -z "$hash" ]; then
-            echo "Need <hash> sepcify"
+            echo "Need: -H <hash>"
             exit 2
         fi
-        if [[ "$hash" -eq "all" ]]; then
+        if [[ "$hash" == "all" ]]; then
             hash="$($0 -m list -p hash | tr " " ",")"
         fi
-        hash_list=($(echo "$hash" | tr "," " "))
-        for h in "${hash_list[@]}"; do 
+        hash_list="$(echo "$hash" | tr "," " ")"
+        for h in $hash_list; do 
             add_torrent_trackers "$h" "$($0 -m get -t "${cache_time:-43200}")"
         done
+        exit 0
+        ;;
+    ban )
+        if [[ "$peer" == "anti_leech" ]]; then
+            peer=$($0 -m list -p peer -H anti_leech | awk 'match($0,/"key"\:"[^"]*"/) { print substr($0,RSTART+7,RLENGTH-8)}' | sed ":a;$!N;s/\n/|/;ta")
+        fi
+        if [ -z "$peer" ]; then
+            echo "No peer was specified. You can specify the peer through \"-P <peer>\"."
+            exit 2
+        fi
+        ban_torrent_peers "$peer"
         exit 0
         ;;
     * )
