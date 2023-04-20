@@ -17,7 +17,8 @@ services:
       - qbt_password=${qbt_password:-adminadmin}
       - qbt_tracker_list_subscription=${qbt_tracker_list_subscription}
       - qbt_tracker_list_static=${qbt_tracker_list_static}
-      - qbt_peer_ban_pattern=${qbt_peer_ban_pattern}
+      - qbt_anti_leech_peer_ban_pattern=${qbt_anti_leech_peer_ban_pattern}
+      - qbt_anti_leech_check_interval=${qbt_anti_leech_check_interval}
     volumes:
       - ${DIR_CONFIG:-./data/config}:/config
       - ${DIR_DOWNLOADS:-./data/downloads}:/downloads

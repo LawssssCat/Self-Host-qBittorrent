@@ -24,7 +24,7 @@ docker-compose exec qbittorrent tail -f /config/qBittorrent/logs/qbittorrent.log
 
 **tracker script:** (base on [WEB API](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)))
 ```bash
-$ bash script/qbittorrent_webapi_cli.sh -h
+$ bash /script/qbittorrent_webapi_cli.sh -h
 Usage: /script/qbittorrent_webapi_cli.sh [OPTIONS...]
 
   -l            List mode
@@ -49,7 +49,7 @@ Example:
     -m list -p peer -H <hash>
   List all peers of All torrent
     -m list -p peer -H all
-  List all leech peers of All torrent
+  List all active leech peers of All torrent
     -m list -p peer -H anti_leech
   List all banned peers
     -m list -p banpeer
@@ -64,7 +64,7 @@ Example:
     -m add -H all
   Ban peers
     -m ban -P <peer1>|<peer2>
-  Ban all leech peers
+  Ban all active leech peers
     -m ban -P anti_leech
 ```
 

@@ -20,7 +20,7 @@ qbt_tracker_list_static="${qbt_tracker_list_static:-""}"
 qbt_cache_tracker_list_subscription="${qbt_cache_tracker_list_subscription:-/tmp/.qbt_cache_tracker_list_subscription}"
 
 # peer ban pattern that used by 'grep -E'
-qbt_peer_ban_pattern="${qbt_peer_ban_pattern:-Xunlei|\"key\"\:\"[^\"]*\:15000\".*\"country_code\"\:\"cn\"|QQDownload|TorrentStorm}"
+qbt_anti_leech_peer_ban_pattern="${qbt_anti_leech_peer_ban_pattern:-Xunlei|\-XL}"
 
 ########## CONFIGURATIONS ##########
 
@@ -196,7 +196,7 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "    -m list -p peer -H <hash>"
             echo "  List all peers of All torrent"
             echo "    -m list -p peer -H all"
-            echo "  List all leech peers of All torrent"
+            echo "  List all active leech peers of All torrent"
             echo "    -m list -p peer -H anti_leech"
             echo "  List all banned peers"
             echo "    -m list -p banpeer"
@@ -211,7 +211,7 @@ while getopts ":hm:p:H:t:P:" opt; do
             echo "    -m add -H all"
             echo "  Ban peers"
             echo "    -m ban -P <peer1>|<peer2>"
-            echo "  Ban all leech peers"
+            echo "  Ban all active leech peers"
             echo "    -m ban -P anti_leech"
             exit 0
             ;;
@@ -243,7 +243,11 @@ case "$mode" in
                     hash="$($0 -m list -p hash | tr " " ",")"
                 fi
                 if [[ "$hash" == "anti_leech" ]]; then
-                    $0 -m list -p peer -H all | grep -E "$qbt_peer_ban_pattern"
+                    if [ -z "$qbt_anti_leech_peer_ban_pattern" ]; then
+                        echo "Unfound env \"qbt_anti_leech_peer_ban_pattern\""
+                        exit 2
+                    fi
+                    $0 -m list -p peer -H all | grep -E "$qbt_anti_leech_peer_ban_pattern"
                     exit 0
                 fi
                 hash_list="$(echo "$hash" | tr "," " ")"
