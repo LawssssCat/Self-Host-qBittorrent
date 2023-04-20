@@ -1,5 +1,5 @@
 **docker:** ([Dockerfile](https://github.com/linuxserver/docker-qbittorrent/blob/master/Dockerfile))
-```
+```bash
 https://hub.docker.com/r/linuxserver/qbittorrent
 ```
 
@@ -9,9 +9,13 @@ https://hub.docker.com/r/linuxserver/qbittorrent
 cp .env .env.local
 # run
 docker-compose --env-file .env.local up -d
+# log for app
+docker-compose logs -f
+# log for torrent
+docker-compose exec qbittorrent tail -f /config/qBittorrent/logs/qbittorrent.log
 ```
 
-**feature**
+**feature:**
 
 + [x] Set up a tracker subscription and add them to your new torrent
 + [x] Scan peers on a regular basis, blocking those thought to be leeches
