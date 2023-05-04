@@ -96,10 +96,8 @@ ${tmp_tracker_list}
 EOF
     fi
     # static trackers
-    for j in $qbt_tracker_list_static; do
-        tmp_tracker_list+=$j
-        tmp_tracker_list+=$'\n'
-    done
+    tmp_tracker_list+="
+$qbt_tracker_list_static"
     # list | unique | rows
     tracker_list=$(echo "$tmp_tracker_list" | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}' | xargs | tr ' ' '\n')
 	tracker_list_num=$(echo "$tracker_list" | wc -l)
