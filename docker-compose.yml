@@ -22,6 +22,7 @@ services:
     volumes:
       - ${DIR_CONFIG:-./data/config}:/config
       - ${DIR_DOWNLOADS:-./data/downloads}:/downloads
+      - /etc/resolv.conf:/etc/resolv.conf:ro
       - ./script:/script:ro
       - ./script/config/crontabs/abc:/config/crontabs/abc
     network_mode: "host" # for listening port access from internat
