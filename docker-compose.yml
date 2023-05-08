@@ -1,33 +1,33 @@
 ---
-version: "2.1"
+version: "3"
 services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
-      - TZ=${TZ:-Asia/Shanghai}
-      - WEBUI_PORT=${qbt_port:-8081}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=${qbt_port}
       - DOCKER_MODS=linuxserver/mods:universal-cron #|linuxserver/mods:universal-stdout-logs|arafatamim/linuxserver-io-mod-vuetorrent
       # - LOGS_TO_STDOUT="/config/qBittorrent/logs/qbittorrent.log"
-      - qbt_host=${qbt_host:-http://127.0.0.1}
-      - qbt_port=${qbt_port:-8081}
-      - qbt_username=${qbt_username:-admin}
-      - qbt_password=${qbt_password:-adminadmin}
+      - qbt_host=${qbt_host}
+      - qbt_port=${qbt_port}
+      - qbt_username=${qbt_username}
+      - qbt_password=${qbt_password}
       - qbt_tracker_list_subscription=${qbt_tracker_list_subscription}
       - qbt_tracker_list_static=${qbt_tracker_list_static}
       - qbt_anti_leech_peer_ban_pattern=${qbt_anti_leech_peer_ban_pattern}
       - qbt_anti_leech_check_interval=${qbt_anti_leech_check_interval}
     volumes:
-      - ${DIR_CONFIG:-./data/config}:/config
-      - ${DIR_DOWNLOADS:-./data/downloads}:/downloads
-      - /etc/resolv.conf:/etc/resolv.conf:ro
+      - ${DIR_CONFIG}:/config
+      - ${DIR_DOWNLOADS}:/downloads
       - ./script:/script:ro
       - ./script/config/crontabs/abc:/config/crontabs/abc
+    # network
+    # see https://docs.docker.com/network/bridge/
+    # see https://docs.docker.com/network/network-tutorial-standalone/
+    # see https://docs.docker.com/compose/networking/
     network_mode: "host" # for listening port access from internat
-    #     ports:
-    #       - 8888:8888
-    #       - 28888:28888
-    #       - 28888:28888/udp
+    dns: "${NETWORK_DNS}"
     restart: unless-stopped
