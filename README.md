@@ -5,6 +5,8 @@ https://hub.docker.com/r/linuxserver/qbittorrent
 
 **usage:**
 ```bash
+# security
+chmod 700 -R script
 # config 
 cp .env .env.local
 # run
