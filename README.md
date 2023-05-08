@@ -17,8 +17,8 @@ docker-compose exec qbittorrent tail -f /config/qBittorrent/logs/qbittorrent.log
 
 **feature:**
 
-+ [x] Set up a tracker subscription and add them to your new torrent
-+ [x] Scan peers on a regular basis, blocking those thought to be leeches
++ [x] Add subscribed trackers when creating a new torrent.
++ [x] Ban leech peers that are recognized by the regex expression periodically.
 
 ---
 
