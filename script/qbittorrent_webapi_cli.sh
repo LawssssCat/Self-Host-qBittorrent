@@ -25,7 +25,7 @@ qbt_anti_leech_peer_ban_pattern="${qbt_anti_leech_peer_ban_pattern:-Xunlei|\-XL}
 ########## CONFIGURATIONS ##########
 
 jq_executable="$(command -v jq)"
-curl_executable="$(command -v curl)"
+curl_executable="$(command -v curl) --connect-timeout 15"
 
 if [[ -z $jq_executable ]]; then
 	echo -e "\n\e[0;91;1mFail on jq. Aborting.\n\e[0m"
