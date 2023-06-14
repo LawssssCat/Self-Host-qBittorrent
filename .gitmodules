@@ -1,0 +1,3 @@
+[submodule "qbittorrent-web-api-tools"]
+	path = qbittorrent-web-api-tools
+	url = git@github.com:LawssssCat/qbittorrent-web-api-tools.git
