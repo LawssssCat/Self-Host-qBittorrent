@@ -2,9 +2,5 @@
 
 function lines_number {
     local lines="$1"
-    if [ "$(echo $lines)" == "" ]; then
-        echo -n 0
-        return
-    fi
-    echo "$lines" | wc -l
+    echo "$lines" | grep -E -v '^( )*$' | wc -l
 }
