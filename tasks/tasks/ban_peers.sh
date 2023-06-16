@@ -9,7 +9,7 @@ source /tasks/lib/tasks.tools.shlib
 
 # match
 get_matching_peers "$qbt_peer_ban_pattern" && 
-ban_ids="$(echo "$qbt_mached_peers" | $jq_executable ".id" -r)" || exit 1
+ban_ids="$(echo "$qbt_mached_peers" | $jq_executable ".key" -r)" || exit 1
 
 # ban
 if [ -n "$ban_ids" ]; then
