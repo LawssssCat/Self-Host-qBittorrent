@@ -8,12 +8,24 @@ services:
       - PGID=${QB_PGID:-1000}
       - TZ=${QB_TZ:-Etc/UTC}
       - WEBUI_PORT=${QB_PORT_WEBUI:-8080}
+      - DOCKER_MODS=linuxserver/mods:universal-cron
+      # cron task
+      - qbt_host=${QB_HOST:-http://127.0.0.1}
+      - qbt_port=${QB_PORT_WEBUI:-8080}
+      - qbt_username=${QB_USERNAME:-admin}
+      - qbt_password=${QB_PASSWORD:-adminadmin}
+      - qbt_tracker_fetch_urls=${QB_TRACKER_FETCH_URLS:-https://cf.trackerslist.com/best.txt}
+      - qbt_peer_ban_pattern=${QB_PEER_BAN_PATTERN:-Xunlei|\-XL} # grep -E
     volumes:
       - ./data/qbittorrent/config:/config
       - qbittorrent-download:/downloads
+      # cron task
+      - ./qbittorrent-web-api-tools:/qbittorrent-web-api-tools:ro
+      - ./tasks/config/crontabs/abc:/config/crontabs/abc
+      - ./tasks/tasks:/tasks:ro
     ports:
       - ${QB_PORT_WEBUI:-8080}:${QB_PORT_WEBUI:-8080}
-      - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881}
+      - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881} # Internet - [Firewall-allow] - [Router-Port_forwarding] - Qbittorrent_listening_port
       - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881}/udp
     restart: unless-stopped
 volumes:
