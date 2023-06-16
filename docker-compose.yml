@@ -3,31 +3,31 @@ version: "3"
 services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: qbittorrent
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - WEBUI_PORT=${qbt_port}
-      - DOCKER_MODS=linuxserver/mods:universal-cron #|linuxserver/mods:universal-stdout-logs|arafatamim/linuxserver-io-mod-vuetorrent
-      # - LOGS_TO_STDOUT="/config/qBittorrent/logs/qbittorrent.log"
-      - qbt_host=${qbt_host}
-      - qbt_port=${qbt_port}
-      - qbt_username=${qbt_username}
-      - qbt_password=${qbt_password}
-      - qbt_tracker_list_subscription=${qbt_tracker_list_subscription}
-      - qbt_tracker_list_static=${qbt_tracker_list_static}
-      - qbt_anti_leech_peer_ban_pattern=${qbt_anti_leech_peer_ban_pattern}
-      - qbt_anti_leech_check_interval=${qbt_anti_leech_check_interval}
+      - PUID=${QB_PUID:-1000}
+      - PGID=${QB_PGID:-1000}
+      - TZ=${QB_TZ:-Etc/UTC}
+      - WEBUI_PORT=${QB_PORT_WEBUI:-8080}
+      - DOCKER_MODS=linuxserver/mods:universal-cron
+      # cron task
+      - qbt_host=${QB_HOST:-http://127.0.0.1}
+      - qbt_port=${QB_PORT_WEBUI:-8080}
+      - qbt_username=${QB_USERNAME:-admin}
+      - qbt_password=${QB_PASSWORD:-adminadmin}
+      - qbt_tracker_fetch_urls=${QB_TRACKER_FETCH_URLS:-https://cf.trackerslist.com/best.txt}
+      - qbt_peer_ban_pattern=${QB_PEER_BAN_PATTERN:-Xunlei|\-XL} # grep -E
     volumes:
-      - ${DIR_CONFIG}:/config
-      - ${DIR_DOWNLOADS}:/downloads
-      - ./script:/script:ro
-      - ./script/config/crontabs/abc:/config/crontabs/abc
-    # network
-    # see https://docs.docker.com/network/bridge/
-    # see https://docs.docker.com/network/network-tutorial-standalone/
-    # see https://docs.docker.com/compose/networking/
-    network_mode: "host" # for listening port access from internat
-    dns: "${NETWORK_DNS}"
+      - ./data/qbittorrent/config:/config
+      - qbittorrent-download:/downloads
+      # cron task
+      - ./qbittorrent-web-api-tools:/qbittorrent-web-api-tools:ro
+      - ./tasks/config/crontabs/abc:/config/crontabs/abc
+      - ./tasks/tasks:/tasks:ro
+    ports:
+      - ${QB_PORT_WEBUI:-8080}:${QB_PORT_WEBUI:-8080}
+      - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881} # Internet - [Firewall-allow] - [Router-Port_forwarding] - Qbittorrent_listening_port
+      - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881}/udp
     restart: unless-stopped
+volumes:
+  qbittorrent-download:
+    external: true
