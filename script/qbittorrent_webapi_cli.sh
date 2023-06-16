@@ -25,7 +25,7 @@ qbt_anti_leech_peer_ban_pattern="${qbt_anti_leech_peer_ban_pattern:-Xunlei|\-XL}
 ########## CONFIGURATIONS ##########
 
 jq_executable="$(command -v jq)"
-curl_executable="$(command -v curl)"
+curl_executable="$(command -v curl) --connect-timeout 15"
 
 if [[ -z $jq_executable ]]; then
 	echo -e "\n\e[0;91;1mFail on jq. Aborting.\n\e[0m"
@@ -96,10 +96,8 @@ ${tmp_tracker_list}
 EOF
     fi
     # static trackers
-    for j in $qbt_tracker_list_static; do
-        tmp_tracker_list+=$j
-        tmp_tracker_list+=$'\n'
-    done
+    tmp_tracker_list+="
+$qbt_tracker_list_static"
     # list | unique | rows
     tracker_list=$(echo "$tmp_tracker_list" | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}' | xargs | tr ' ' '\n')
 	tracker_list_num=$(echo "$tracker_list" | wc -l)
