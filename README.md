@@ -5,7 +5,6 @@ Download qbittorrent-web-api-tools
 ```bash
 git submodule init
 git submodule update
-git submodule foreach git pull
 ```
 
 Specify download path
@@ -15,17 +14,31 @@ qbittorrent_download_path="/path/to/dir" # change
 docker volume create --opt type=none --opt o=bind --opt device=${qbittorrent_download_path} qbittorrent-download 
 ```
 
+Create config path
+
+```bash
+mkdir ./data/qbittorrent/config -p
+```
+
+Create `.env` and custom environment variables
+
+```bash
+vim .env
+```
+
 Boot up Qbittorrent
 
 ```bash
-docker up -d
+docker-compose up -d
 ```
 
 Update tracker
 
 ```bash
-docker compose exec qbittorrent /tasks/update_tracker.sh
+docker-compose exec qbittorrent /tasks/update_tracker.sh
 ```
+
+> Click & Save `Options > BitTorrent > Automatically add these trackers to new downloads` in WebUI
 
 ## Usage
 
