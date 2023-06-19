@@ -24,4 +24,4 @@ get_app_preferences &&
 tracker_new=$(echo "$qbt_app_preferences" | $jq_executable ".add_trackers" -r) || exit 1
 
 # print
-echo "[CRON_ABC] tracker update: OLD,FETCH,NEW=$(lines_number "$tracker_old"),$(lines_number "$tracker_fetch"),$(lines_number "$tracker_new")"
+echo "tracker update: OLD,FETCH,NEW=$(lines_number "$tracker_old"),$(lines_number "$tracker_fetch"),$(lines_number "$tracker_new")"

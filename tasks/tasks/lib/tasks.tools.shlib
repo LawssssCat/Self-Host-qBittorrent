@@ -1,6 +1,1 @@
 #!/bin/bash
-
-function lines_number {
-    local lines="$1"
-    echo "$lines" | grep -E -v '^( )*$' | wc -l
-}

@@ -35,7 +35,7 @@ docker-compose up -d
 Update tracker
 
 ```bash
-docker-compose exec qbittorrent /tasks/update_tracker.sh
+docker-compose exec qbittorrent /tasks/add_trackers_update.sh
 ```
 
 > Click & Save `Options > BitTorrent > Automatically add these trackers to new downloads` in WebUI
@@ -47,14 +47,14 @@ Task
 ```bash
 # Update subscribed trackers from net
 # env: qbt_tracker_fetch_urls
-docker compose exec qbittorrent /tasks/update_tracker.sh
+docker compose exec qbittorrent /tasks/add_trackers_update.sh
 
 # Ban peers by matching pattern
 # env: qbt_peer_ban_pattern
-docker compose exec qbittorrent /tasks/ban_peers.sh
+docker compose exec qbittorrent /tasks/ban_peers_add.sh
 
 # Clean up ban list of peers
-docker compose exec qbittorrent /tasks/clean_banned_peers.sh
+docker compose exec qbittorrent /tasks/ban_peers_clean.sh
 ```
 
 Config
@@ -67,7 +67,7 @@ Config
 Logs
 
 ```bash
-+ docker compose logs
++ docker compose logs -f -t --tail=100
 + ./data/qbittorrent/config/qBittorrent/logs/qbittorrent.log —— qbittorrent application runtime log
 ```
 

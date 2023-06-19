@@ -15,7 +15,7 @@ ban_ids="$(echo "$qbt_mached_peers" | $jq_executable ".key" -r)" || exit 1
 if [ -n "$ban_ids" ]; then
     add_ban_peers "$ban_ids" || exit 1
 else
-    exit 0
+    exit 222 # skip
 fi
 
 # result
@@ -23,4 +23,4 @@ get_app_preferences &&
 banned_ids="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit 1
 
 # print
-echo "[CRON_ABC] ban peers: BAN,BANNED=$(lines_number "$ban_ids"),$(lines_number "$banned_ids")"
+echo "ban peers: BAN,BANNED=$(lines_number "$ban_ids"),$(lines_number "$banned_ids")"

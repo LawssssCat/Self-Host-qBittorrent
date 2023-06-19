@@ -20,4 +20,4 @@ banned_ids_new="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)
 
 # print
 
-echo "[CRON_ABC] clean banned peers: OLD,NEW=$(lines_number "$banned_ids_old"),$(lines_number "$banned_ids_new")"
+echo "clean banned peers: OLD,NEW=$(lines_number "$banned_ids_old"),$(lines_number "$banned_ids_new")"
