@@ -55,6 +55,10 @@ docker compose exec qbittorrent /tasks/ban_peers_add.sh
 
 # Clean up ban list of peers
 docker compose exec qbittorrent /tasks/ban_peers_clean.sh
+
+# Update torrent trackers: remove unwork and add newly fetched trackers 
+# env: qbt_trackers_update_torrent_num —— the number of torrents to update trackers
+docker compose exec qbittorrent /tasks/torrent_trackers_update.sh
 ```
 
 Config

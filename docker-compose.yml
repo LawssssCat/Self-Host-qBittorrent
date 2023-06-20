@@ -16,6 +16,7 @@ services:
       - qbt_password=${QB_PASSWORD:-adminadmin}
       - qbt_tracker_fetch_urls=${QB_TRACKER_FETCH_URLS:-https://cf.trackerslist.com/best.txt}
       - qbt_peer_ban_pattern=${QB_PEER_BAN_PATTERN:-Xunlei|\-XL} # grep -E
+      - qbt_trackers_update_torrent_num=${QB_TRACKER_UPDATE_TORRENT_NUM:-10} 
     volumes:
       - ./data/qbittorrent/config:/config
       - qbittorrent-download:/downloads

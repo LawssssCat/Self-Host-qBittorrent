@@ -9,14 +9,14 @@ source /tasks/lib/tasks.tools.shlib
 
 # old
 get_app_preferences && 
-banned_ids_old="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit 1
+banned_ids_old="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit $EXIT_ERROR
 
 # clean
-set_app_preferences '{"banned_IPs":""}' || exit 1
+set_app_preferences '{"banned_IPs":""}' || exit $EXIT_ERROR
 
 # new
 get_app_preferences && 
-banned_ids_new="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit 1
+banned_ids_new="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit $EXIT_ERROR
 
 # print
 
