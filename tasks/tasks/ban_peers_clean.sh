@@ -7,17 +7,12 @@ source /qbittorrent-web-api-tools/lib/qb.web-api.shlib
 # Source tool library of functions
 source /tasks/lib/tasks.tools.shlib
 
-# old
-get_app_preferences && 
-banned_ids_old="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit $EXIT_ERROR
+# 1. clean
+set_app_preferences '{"banned_IPs":""}' || {
+    task_title_push "fail banned_IPs: [$qbt_webapi_response_status] $qbt_webapi_response_error"
+    task_fatal
+}
 
-# clean
-set_app_preferences '{"banned_IPs":""}' || exit $EXIT_ERROR
-
-# new
-get_app_preferences && 
-banned_ids_new="$(echo "$qbt_app_preferences" | $jq_executable ".banned_IPs" -r)" || exit $EXIT_ERROR
-
-# print
-
-echo "clean banned peers: OLD,NEW=$(lines_number "$banned_ids_old"),$(lines_number "$banned_ids_new")"
+# 2. print stats
+task_title_push "clean banned_IPs"
+task_final

@@ -14,8 +14,7 @@ fi
 
 # run
 task_result="$($task_path 2>&1)"
-task_return="$?"
-case "$task_return" in
+case "$?" in
     0)
         echo -e "[${COLOR_GREEN}SUCCESS${COLOR_RESET}] [$task_path] $task_result"
         ;;
