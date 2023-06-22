@@ -28,17 +28,19 @@ if [ -z "$qbt_add_trackers_url" ]; then
 fi
 
 # 2. get active torrents
-get_torrents "filter=active&sort=dlspeed" || {
+# sort priority: dlspeed(0-1),upspeed(0-1),progress(0-1),last_activity(1-0)
+get_torrents "filter=active&sort=last_activity&reverse=true" || {
     task_title_push "fail get torrents: [$qbt_webapi_response_status] $qbt_webapi_response_error"
     task_fatal
 }
+debug "active_torrents: $qbt_webapi_response_body"
 qbt_active_torrents="$( (echo "$qbt_webapi_response_body" \
-    | $jq_executable 'sort_by(.upspeed) | sort_by(.progress) | .[]' -c \
+    | $jq_executable 'sort_by(.progress) | sort_by(.upspeed) | sort_by(.dlspeed) | .[]' -c \
     | head -n $qbt_trackers_update_torrent_num) 2>&1)" || {
         task_title_push "fail parse json: $qbt_active_torrents"
         task_fatal
     }
-debug "active_torrents: $qbt_active_torrents"
+debug "sorted-active_torrents: $qbt_active_torrents"
 
 # 3. torrent trackers remove & add
 qbt_remove_trackers_total=0
@@ -69,5 +71,5 @@ while read qbt_torrent; do
 done <<< "$qbt_active_torrents"
 
 # 4. print stats
-task_title_push "update torrent_trackers: $(lines_number "$qbt_add_trackers")x$(lines_number "$qbt_active_torrents"),$qbt_remove_trackers_total"
+task_title_push "update torrent_trackers: REMOVE,ADD=$qbt_remove_trackers_total,$(lines_number "$qbt_add_trackers")x$(lines_number "$qbt_active_torrents")"
 task_final

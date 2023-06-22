@@ -16,12 +16,12 @@ function fetch_net_trackers {
     while read j; do
         local tmp_fetch_result=""
         tmp_fetch_result=$($curl_executable --connect-timeout 20 $j 2>&1) || {
-            task_message_push "fail fetch tracker: $j <--> $tmp_fetch_result"
+            task_message_push "fail fetch tracker: \"$j\" <--> $tmp_fetch_result"
             continue
         }
         local tmp_fetch_trackers=""
         tmp_fetch_trackers="$(echo "$tmp_fetch_result" | grep -e '^http://' -e '^https://' -e '^udp://')" || {
-            task_message_push "fail fetch tracker: $j <--> Unknown response \"$(echo "$tmp_fetch_result" | head -n 1)\""
+            task_message_push "fail fetch tracker: \"$j\" <--> Unknown response \"$(echo "$tmp_fetch_result" | head -n 1)\""
             continue
         }
         tmp_trackers+="$tmp_fetch_trackers"
@@ -29,7 +29,7 @@ function fetch_net_trackers {
     done <<< "$fetch_urls"
     qbt_net_trackers="$(echo "$tmp_trackers" | lines_trim | lines_unique)"
 }
-fetch_net_trackers "$qbt_tracker_fetch_urls"
+fetch_net_trackers "$(lines_trim "$qbt_tracker_fetch_urls")"
 debug "trackers: \n$qbt_net_trackers"
 if [ -z "$qbt_net_trackers" ]; then
     task_title_push "fail to fetch trackers from net."

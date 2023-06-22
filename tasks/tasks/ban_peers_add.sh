@@ -45,6 +45,7 @@ function get_matching_peers {
 get_matching_peers "$qbt_peer_ban_pattern"
 qbt_banned_IPs_add="$(echo "$qbt_mached_peers" | $jq_executable ".key" -r 2>&1)" || {
     task_title_push "fail parse torrent: $qbt_banned_IPs_add"
+    task_message_push "$qbt_mached_peers"
     task_fatal
 }
 
