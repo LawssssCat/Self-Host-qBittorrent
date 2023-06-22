@@ -52,7 +52,9 @@ qbt_banned_IPs_add="$(echo "$qbt_mached_peers" | $jq_executable ".key" -r 2>&1)"
 if [ -z "$qbt_banned_IPs_add" ]; then
     task_skip
 fi
-add_ban_peers "$qbt_banned_IPs_add" || {
+qbt_banned_IPs_add_params="$(lines_join '|' "$qbt_banned_IPs_add")"
+debug "banned_IPs: $qbt_banned_IPs_add_params"
+add_ban_peers "$qbt_banned_IPs_add_params" || {
     task_message_push "fail add banned_IPs: [$qbt_webapi_response_status] $qbt_webapi_response_error"
     task_fatal
 }
@@ -66,7 +68,6 @@ qbt_app_banned_IPs="$(echo "$qbt_webapi_response_body" | $jq_executable ".banned
     task_title_push "fail parse json: $qbt_add_trackers"
     task_fatal
 }
-debug "banned_IPs: $qbt_app_banned_IPs"
 
 # 4. print stats
 task_title_push "add banned_IPs: BAN,BANNED=$(lines_number "$qbt_banned_IPs_add"),$(lines_number "$qbt_app_banned_IPs")"
