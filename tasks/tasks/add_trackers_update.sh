@@ -15,7 +15,7 @@ function fetch_net_trackers {
     local tmp_trackers=""
     while read j; do
         local tmp_fetch_result=""
-        tmp_fetch_result=$($curl_executable --connect-timeout 20 $j 2>&1) || {
+        tmp_fetch_result=$($curl_executable --silent --fail --show-error --connect-timeout 20 $j 2>&1) || {
             task_message_push "fail fetch tracker: \"$j\" <--> $tmp_fetch_result"
             continue
         }
