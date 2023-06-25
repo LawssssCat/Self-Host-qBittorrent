@@ -5,8 +5,9 @@
 #|       |       |       |       .----- day of week (0 - 6) (Sunday=0 or 7)  OR sun,mon,tue,wed,thu,fri,sat
 #|       |       |       |       |
 #*       *       *       *       *       command to be executed
-0        */12    *       *       *       /tasks/update_tracker.sh
-10       */12    *       *       *       /tasks/clean_banned_peers.sh
-*/1      *       *       *       *       sleep 0; /tasks/ban_peers.sh
-*/1      *       *       *       *       sleep 20; /tasks/ban_peers.sh
-*/1      *       *       *       *       sleep 40; /tasks/ban_peers.sh
+0        */6     *       *       *       sleep 20 && /tasks/run.sh "/tasks/add_trackers_update.sh"
+10       */12    *       *       *       sleep 40 && /tasks/run.sh "/tasks/ban_peers_clean.sh"
+*/30     *       *       *       *       sleep 60 && /tasks/run.sh "/tasks/torrent_trackers_update.sh"
+*/1      *       *       *       *       sleep 10 && /tasks/run.sh "/tasks/ban_peers_add.sh"
+*/1      *       *       *       *       sleep 30 && /tasks/run.sh "/tasks/ban_peers_add.sh"
+*/1      *       *       *       *       sleep 50 && /tasks/run.sh "/tasks/ban_peers_add.sh"

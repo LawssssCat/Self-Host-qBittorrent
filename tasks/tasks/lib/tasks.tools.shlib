@@ -1,6 +1,39 @@
 #!/bin/bash
 
-function lines_number {
-    local lines="$1"
-    echo "$lines" | grep -E -v '^( )*$' | wc -l
+task_title_queue=()
+task_message_queue=()
+
+function task_message_push {
+    task_message_queue+=("$1")
+}
+
+function task_title_push {
+    task_title_queue+=("$1")
+}
+
+function task_message_show {
+    for ((i=0;i<${#task_title_queue[@]};i++)); do
+            warn "${task_title_queue[$i]}"
+    done
+    for ((i=0;i<${#task_message_queue[@]};i++)); do
+            warn "${task_message_queue[$i]}" >&2
+    done
+}
+
+function task_message_clean {
+    task_message_queue=()
+}
+
+function task_final {
+    task_message_show
+    exit $EXIT_OK
+}
+
+function task_skip {
+    exit $EXIT_SKIP
+}
+
+function task_fatal {
+    task_message_show
+    exit $EXIT_ERROR
 }
