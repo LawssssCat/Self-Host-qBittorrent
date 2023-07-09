@@ -30,6 +30,10 @@ services:
       - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881} # Internet - [Firewall-allow] - [Router-Port_forwarding] - Qbittorrent_listening_port
       - ${QB_PORT_LISTEN:-6881}:${QB_PORT_LISTEN:-6881}/udp
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2000M
 volumes:
   qbittorrent-download:
     external: true
