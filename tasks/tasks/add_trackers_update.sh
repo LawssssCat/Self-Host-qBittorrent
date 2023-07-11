@@ -1,6 +1,7 @@
 #!/bin/bash
 
 : ${qbt_tracker_fetch_urls:=https://cf.trackerslist.com/best.txt}
+: ${qbt_tracker_static_urls:=}
 
 # Source library of functions
 source /qbittorrent-web-api-tools/lib/qb.shlib
@@ -12,7 +13,8 @@ source /tasks/lib/tasks.tools.shlib
 # 1. fetch trackers from net
 function fetch_net_trackers {
     local fetch_urls="$1"
-    local tmp_trackers=""
+    local tmp_trackers="$qbt_tracker_static_urls"
+    tmp_trackers+=$'\n'
     while read j; do
         local tmp_fetch_result=""
         tmp_fetch_result=$($curl_executable --silent --fail --show-error --connect-timeout 20 $j 2>&1) || {
