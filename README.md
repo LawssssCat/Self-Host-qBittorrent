@@ -23,6 +23,7 @@ mkdir ./data/qbittorrent/config -p
 Create `.env` and custom environment variables
 
 ```bash
+cp .env.example .env
 vim .env
 ```
 
