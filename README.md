@@ -46,7 +46,8 @@ Task
 
 ```bash
 # Update subscribed trackers from net
-# env: qbt_tracker_fetch_urls
+# env: qbt_tracker_fetch_urls —— the updated list of public trackers
+# env: qbt_tracker_static_urls —— the public trackers that we have known
 docker compose exec qbittorrent /tasks/add_trackers_update.sh
 
 # Ban peers by matching pattern
