@@ -18,6 +18,7 @@ services:
       - qbt_tracker_static_urls=${QB_TRACKER_STATIC_URLS:-}
       - qbt_peer_ban_pattern=${QB_PEER_BAN_PATTERN:-Xunlei|\-XL} # grep -E
       - qbt_trackers_update_torrent_num=${QB_TRACKER_UPDATE_TORRENT_NUM:-10} 
+      - qbt_torrent_pt_tag=${QB_TORRENT_PT_TAG:-pt}
     volumes:
       - ./data/qbittorrent/config:/config
       - qbittorrent-download:/downloads
