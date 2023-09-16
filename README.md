@@ -1,12 +1,5 @@
 ## Getting Started
 
-Download qbittorrent-web-api-tools
-
-```bash
-git submodule init
-git submodule update
-```
-
 Specify download path
 
 ```bash
