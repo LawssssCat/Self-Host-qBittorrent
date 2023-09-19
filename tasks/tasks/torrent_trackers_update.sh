@@ -38,8 +38,8 @@ get_torrents "filter=active&sort=last_activity&reverse=true" || {
 debug "active_torrents: $qbt_webapi_response_body"
 qbt_active_torrents="$( (echo "$qbt_webapi_response_body" \
     | $jq_executable 'sort_by(.progress) | sort_by(.upspeed) | sort_by(.dlspeed) | .[]' -c \
-    | grep -E -v '\"tags\":\"([^"]*, |)?'$qbt_torrent_pt_tag'(, [^"]*|)?\"' \
-    | grep -E -v '\"category\":\"'$qbt_torrent_pt_category'\"' \
+    | grep -E -v '\"tags\":\"([^"]*, |)?('$qbt_torrent_pt_tag')(, [^"]*|)?\"' \
+    | grep -E -v '\"category\":\"('$qbt_torrent_pt_category'\")' \
     | head -n $qbt_trackers_update_torrent_num) 2>&1)" || {
         task_title_push "fail parse json: $qbt_active_torrents"
         task_fatal
