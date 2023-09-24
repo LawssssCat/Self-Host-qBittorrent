@@ -1,6 +1,7 @@
 #!/bin/bash
 
 : ${qbt_tracker_fetch_urls:=https://cf.trackerslist.com/best.txt}
+: ${qbt_tracker_fetch_protocols:=udp|http|https}
 : ${qbt_tracker_static_urls:=}
 
 # Source library of functions
@@ -14,15 +15,16 @@ source /tasks/lib/tasks.tools.shlib
 function fetch_net_trackers {
     local fetch_urls="$1"
     local tmp_trackers="$qbt_tracker_static_urls"
+    tmp_trackers="$(echo "$tmp_trackers" | grep -E "^($qbt_tracker_fetch_protocols)://")"
     tmp_trackers+=$'\n'
     while read j; do
         local tmp_fetch_result=""
-        tmp_fetch_result=$($curl_executable --silent --fail --show-error --connect-timeout 20 $j 2>&1) || {
+        tmp_fetch_result="$($curl_executable --silent --fail --show-error --connect-timeout 20 $j 2>&1)" || {
             task_message_push "fail fetch tracker: \"$j\" <--> $tmp_fetch_result"
             continue
         }
         local tmp_fetch_trackers=""
-        tmp_fetch_trackers="$(echo "$tmp_fetch_result" | grep -e '^http://' -e '^https://' -e '^udp://')" || {
+        tmp_fetch_trackers="$(echo "$tmp_fetch_result" | grep -E '^('$qbt_tracker_fetch_protocols')://')" || {
             task_message_push "fail fetch tracker: \"$j\" <--> Unknown response \"$(echo "$tmp_fetch_result" | head -n 1)\""
             continue
         }

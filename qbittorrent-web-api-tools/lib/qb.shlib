@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# exit
+export EXIT_OK=0
+export EXIT_ERROR=1        # cause by unknown
+export EXIT_EXCEPTION=2    # cause by env
+export EXIT_ARGUMENT=127   # cause by user
+export EXIT_SKIP=222       # skip
+
+# prints
+export COLOR_RED='\e[1;31m'
+export COLOR_GREEN='\e[1;32m'
+export COLOR_RESET='\e[0m'
+
+
+# print/log and immediately exit
+function fatal {
+  exit_status=${1:=$EXIT_ARGUMENT}
+  shift
+  echo -e "${@}" >&2
+  exit ${exit_status}
+}
+
+
+# print/log and continue execution
+function warn {
+  echo -e "${@}"
+}
+
+
+# print to screen and log (only active when DEBUG is 'true')
+function is_debug {
+  [ "$QBT_DEBUG" == 'true' ] && return 0 || return 1
+}
+function debug {
+  if is_debug ; then
+    [ $# -gt 0 ] && {
+      echo -e "DEBUG: ${@}"
+    } || {
+      while read data; do
+        echo -e "DEBUG: ${data}"
+      done
+    }
+  fi
+}
+
+###
+# lines tools
+###
+
+function lines_arg {
+  if [ $# -gt 0 ]; then
+    for var in "$@"; do
+      echo "$var"
+    done
+  else
+    while read data
+    do
+      echo "$data"
+    done
+  fi
+}
+
+function lines_trim {
+  lines_arg "$@" | sed '/^ *$/d'
+}
+
+function lines_number {
+  lines_arg "$@" | lines_trim | wc -l
+}
+
+function lines_unique {
+  lines_arg "$@" | awk '!a[$0]++{print}'
+}
+
+function lines_join {
+  local lines_fz="${1}"
+  shift
+  lines_arg "$@" | sed ':a; N; $!ba; s/\n/'"$lines_fz"'/g'
+}

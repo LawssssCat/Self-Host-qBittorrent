@@ -1,0 +1,288 @@
+#!/bin/bash
+
+# defaults, but use exported values if they are set
+: ${qbt_host:=http://127.0.0.1}
+: ${qbt_port:=8080}
+: ${qbt_username:=admin}
+: ${qbt_password:=adminadmin}
+
+# paths
+export jq_executable="$(command -v jq)"
+export curl_executable="$(command -v curl)"
+
+if [[ ! -x $jq_executable ]]; then
+    fatal $EXIT_EXCEPTION "${COLOR_RED}Fail on jq. Aborting.${COLOR_RESET}" "\n" \
+    "You can find it here: https://stedolan.github.io/jq/"    "\n" \
+    "Or you can install it with -> sudo apt install jq"
+fi
+
+if [[ ! -x $curl_executable ]]; then
+    fatal $EXIT_EXCEPTION "${COLOR_RED}Fail on curl. Aborting.${COLOR_RESET}" "\n" \
+    "You can install it with -> sudo apt install curl"
+fi
+
+####################################
+# qbittorrent web-api functions
+####################################
+
+#
+# call qbittorrent webui api. 
+#
+# env:
+# ${qbt_host} -- webui host. e.g. http://127.0.0.1
+# ${qbt_port} -- webui port. e.g. 8080
+#
+# function:
+# <method> <uri> <body> [curl options...]
+#
+# return:
+# qbt_webapi_response_status   -- response status code
+# qbt_webapi_response_error    -- response error message
+# qbt_webapi_response_headers  -- response headers string
+# qbt_webapi_response_body     -- response body string
+#
+function call_web_api {
+    local request_method="$1" # GET/POST
+    local request_path="${qbt_host}:${qbt_port}/${2/\/}"
+    local request_body="$3"
+    shift $(($#>3 ? 3 : $#))
+    local curl_opts="$@"
+
+    local response_context=""
+    response_context=$($curl_executable --connect-timeout 120 \
+        $curl_opts \
+        --silent --fail-with-body --show-error --stderr - \
+        --include \
+        --write-out "\n%{size_header},%{size_download}" \
+        --data "$request_body" \
+        --cookie "$qbt_cookie" \
+        --request $request_method "$request_path")
+    local request_return="$?"
+
+    is_debug && {
+        local tmp_debug_logo="webapi-request"
+        debug "$tmp_debug_logo: target: $request_method $request_path"
+        debug "$tmp_debug_logo: cookie: $qbt_cookie"
+        debug "$tmp_debug_logo: option: $curl_opts"
+        debug "$tmp_debug_logo: body  : $request_body"
+        debug "$tmp_debug_logo: return: $request_return"
+    }
+
+    reset_web_api_response # reset
+
+    local response_header_size=$(sed -n '$ s/^\([0-9]*\),.*$/\1/ p' <<< "${response_context}")
+    local response_body_size=$(sed -n '$ s/^.*,\([0-9]*\)$/\1/ p' <<< "${response_context}")
+    # response headers
+    qbt_webapi_response_headers="${response_context:0:${response_header_size}}"
+    # response status
+    if [ -n "$qbt_webapi_response_headers" ]; then
+        qbt_webapi_response_status="$(echo "$qbt_webapi_response_headers"| head -n 1 | awk '{print $2}')"
+    else
+        qbt_webapi_response_status="000"
+    fi
+    # response body
+    if [ $request_return -eq 0 ]; then
+        local tmp_response_part="${response_context:${response_header_size}}"
+        qbt_webapi_response_body="$(echo "$tmp_response_part" | head -n -1)"
+    else
+        local tmp_response_part="${response_context:${response_header_size}}"
+        qbt_webapi_response_error="$FUNCNAME: $(echo "$tmp_response_part" | head -n 1)"
+        qbt_webapi_response_body="$(echo "$tmp_response_part" | tail -n +2 | head -n -1)"
+    fi
+
+    is_debug && {
+        local tmp_debug_logo="webapi-response"
+        debug "webapi-response: context: $response_context"
+        debug "webapi-response: status : $qbt_webapi_response_status"
+        debug "webapi-response: header : $qbt_webapi_response_headers"
+        debug "webapi-response: error  : $qbt_webapi_response_error"
+        debug "webapi-response: body   : $qbt_webapi_response_body"
+    }
+
+    return $qbt_webapi_request_return
+}
+
+function reset_web_api_response {
+    qbt_webapi_response_error=""
+    qbt_webapi_response_headers=""
+    qbt_webapi_response_body=""
+    qbt_webapi_response_status="000"
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#login
+# 403	User's IP is banned for too many failed login attempts
+# 200	All other scenarios
+function get_cookie {
+    if [ -n "$qbt_cookie" ]; then
+        return $EXIT_OK
+    fi
+    call_web_api "POST" "/api/v2/auth/login" "username=${qbt_username}&password=${qbt_password}"
+    # ok
+    if [ "$qbt_webapi_response_status" -eq 200 ] && [ "$qbt_webapi_response_body" == "Ok." ]; then
+        qbt_cookie="$(echo "$qbt_webapi_response_headers" | grep 'set-cookie: ' | awk -F ' ' '{print $2}')"
+        if [ -n "$qbt_cookie" ]; then
+            return $EXIT_OK
+        fi
+        qbt_webapi_response_error="$FUNCNAME: Can't get Cookie 'SID' from response headers; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+    # exceptions
+    if [ "$qbt_webapi_response_status" -eq 200 ] && [ "$qbt_webapi_response_body" == "Fails." ]; then
+        qbt_webapi_response_error="$FUNCNAME: Login fail; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    elif [ "$qbt_webapi_response_status" -eq 403 ]; then
+        qbt_webapi_response_error="$FUNCNAME: User's IP is banned for too many failed login attempts.; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences
+# 200	All scenarios- see JSON below
+function get_app_preferences {
+    get_cookie || return $?
+    call_web_api "GET" "/api/v2/app/preferences" ""
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#set-application-preferences
+# 200	All scenarios
+function set_app_preferences {
+    local app_preferences="$1" # json format, e.g. {"save_path":"C:/Users/Dayman/Downloads","queueing_enabled":false,"scan_dirs":{"C:/Games": 0,"D:/Downloads": 1}}
+    get_cookie || return $?
+    call_web_api "POST" "/api/v2/app/setPreferences" "json=$app_preferences"
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-torrent-trackers
+# 404	Torrent hash was not found
+# 200	All other scenarios
+function get_torrent_trackers {
+    local torrent_hash="$1" # e.g. 8c212779b4abde7c6bc608063a0d008b7e40ce32
+    get_cookie || return $?
+    call_web_api "GET" "/api/v2/torrents/trackers?hash=$torrent_hash" ""
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    elif [ "$qbt_webapi_response_status" -eq 404 ]; then
+        qbt_webapi_response_error="$FUNCNAME: Torrent hash was not found; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#add-trackers-to-torrent
+# 404	Torrent hash was not found
+# 200	All other scenarios
+function add_torrent_trackers {
+    local torrent_hash="$1" # e.g. 8c212779b4abde7c6bc608063a0d008b7e40ce32
+    local tracker_urls="$2" # e.g. http://192.168.0.1/announce%0Audp://192.168.0.1:3333/dummyAnnounce
+    get_cookie || return $?
+    call_web_api "POST" "/api/v2/torrents/addTrackers" "hash=$torrent_hash&urls=$tracker_urls"
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    elif [ "$qbt_webapi_response_status" -eq 404 ]; then
+        qbt_webapi_response_error="$FUNCNAME: Torrent hash was not found; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#remove-trackers
+# 404	Torrent hash was not found
+# 409	All urls were not found
+# 200	All other scenarios
+function remove_torrent_trackers {
+    local torrent_hash="$1" # e.g. 8c212779b4abde7c6bc608063a0d008b7e40ce32
+    local tracker_urls="$2" # e.g. http://192.168.0.1/announce|udp://192.168.0.1:3333/dummyAnnounce
+    get_cookie || return $?
+    call_web_api "POST" "/api/v2/torrents/removeTrackers" "hash=$torrent_hash&urls=$tracker_urls"
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    elif [ "$qbt_webapi_response_status" -eq 404 ]; then
+        qbt_webapi_response_error="$FUNCNAME: Torrent hash was not found; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    elif [ "$qbt_webapi_response_status" -eq 409 ]; then
+        qbt_webapi_response_error="$FUNCNAME: All urls were not found; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-torrent-peers-data
+# 404	Torrent hash was not found
+# 200	All other scenarios- see JSON below
+function get_torrent_peers {
+    local torrent_hash="$1" # e.g. 8c212779b4abde7c6bc608063a0d008b7e40ce32
+    get_cookie || return $?
+    call_web_api "GET" "/api/v2/sync/torrentPeers?hash=$torrent_hash" ""
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    elif [ "$qbt_webapi_response_status" -eq 404 ]; then
+        qbt_webapi_response_error="$FUNCNAME: Torrent hash was not found; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#ban-peers
+# 200	All scenarios
+function add_ban_peers {
+    local torrent_peers="$1" # e.g. 11.11.11.11:6881|12.12.12.12:6891
+    get_cookie || return $?
+    call_web_api "POST" "/api/v2/transfer/banPeers" "peers=$torrent_peers"
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-torrent-list
+# 200	All scenarios
+function get_torrents {
+    local params="$1" # e.g. filter=downloading&category=sample%20category&sort=ratio
+    get_cookie || return $?
+    call_web_api "GET" "$(lines_join '?' "/api/v2/torrents/info" "$params")" ""
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+
+# https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#reannounce-torrents
+# 200	All scenarios
+function reannounce_torrent {
+    local torrent_hash="$1" # e.g. all, 8c212779b4abde7c6bc608063a0d008b7e40ce32|54eddd830a5b58480a6143d616a97e3a6c23c439
+    get_cookie || return $?
+    call_web_api "GET" "/api/v2/torrents/reannounce?hashes=$torrent_hash" ""
+    if [ "$qbt_webapi_response_status" -eq 200 ]; then
+        return $EXIT_OK
+    else
+        qbt_webapi_response_error="$FUNCNAME: Unknown error; $qbt_webapi_response_error"
+        return $EXIT_ERROR
+    fi
+}
+

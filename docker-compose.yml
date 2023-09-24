@@ -15,9 +15,12 @@ services:
       - qbt_username=${QB_USERNAME:-admin}
       - qbt_password=${QB_PASSWORD:-adminadmin}
       - qbt_tracker_fetch_urls=${QB_TRACKER_FETCH_URLS:-https://cf.trackerslist.com/best.txt}
+      - qbt_tracker_fetch_protocols=${QB_TRACKER_FETCH_PROTOCOLS:-udp|http|https}
       - qbt_tracker_static_urls=${QB_TRACKER_STATIC_URLS:-}
       - qbt_peer_ban_pattern=${QB_PEER_BAN_PATTERN:-Xunlei|\-XL} # grep -E
       - qbt_trackers_update_torrent_num=${QB_TRACKER_UPDATE_TORRENT_NUM:-10} 
+      - qbt_torrent_pt_tag=${QB_TORRENT_PT_TAG:-pt}
+      - qbt_torrent_pt_category=${QB_TORRENT_PT_CATEGORY:-pt}
     volumes:
       - ./data/qbittorrent/config:/config
       - qbittorrent-download:/downloads
